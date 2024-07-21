@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id ("kotlin-kapt")
+    id ("org.jetbrains.kotlin.plugin.serialization")
 }
 
 android {
@@ -68,4 +70,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
     implementation(libs.androidx.navigation.compose)
+
+    implementation (libs.ktor.client.android)
+    implementation (libs.ktor.client.content.negotiation)
+    implementation (libs.ktor.serialization.kotlinx.json)
+
+    implementation (libs.androidx.room.runtime)
+    kapt (libs.androidx.room.compiler)
+
+    implementation ("com.github.bumptech.glide:compose:1.0.0-alpha.1")
 }
