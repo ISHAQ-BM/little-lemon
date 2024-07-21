@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -21,7 +22,10 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -51,18 +55,23 @@ import com.example.littlelemon.ui.theme.LittleLemonTheme
 
 @Composable
 fun Home(
-    modifier: Modifier = Modifier,
-    navController: NavHostController
+    navController: NavHostController,
+    menuItems: List<MenuItemRoom>,
+    onSearch: (String) -> Unit,
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit,
+    searchPhrase: String
 ) {
+    val categories = listOf("All") + menuItems.map { it.category }.distinct()
         Column(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.Top,
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
 
         ) {
             Box(
-                modifier.padding(top = 16.dp)
+                Modifier.padding(top = 16.dp)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.logo),
@@ -77,7 +86,7 @@ fun Home(
                 Image(
                     painter = painterResource(id = R.drawable.profile),
                     contentDescription = null,
-                    modifier = modifier
+                    modifier = Modifier
                         .padding(end = 24.dp)
                         .size(48.dp)
                         .align(Alignment.CenterEnd)
@@ -85,9 +94,6 @@ fun Home(
                 )
             }
 
-            var searchPhrase by remember {
-                mutableStateOf("")
-            }
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -125,7 +131,7 @@ fun Home(
                 }
                 OutlinedTextField(
                     value = searchPhrase,
-                    onValueChange = {searchPhrase = it},
+                    onValueChange = {onSearch(it)},
                     modifier = Modifier.fillMaxWidth(),
                     colors = TextFieldDefaults.colors(Color.LightGray),
                     leadingIcon = {
@@ -150,12 +156,12 @@ fun Home(
                         .padding(8.dp),
                     color = Color.Black
                 )
-                if (searchPhrase.isNotEmpty()) { //9
-                    menuItems = menuItems.filter {
-                        it.title.contains(searchPhrase, ignoreCase = true)
-                    } //10
-                }
-                MenuItemsList(menuItems)
+
+                CategoryButtons(categories = categories.filter { it != "All" },
+                    selectedCategory = selectedCategory,
+                    onCategorySelected = onCategorySelected)
+                HorizontalDivider(thickness = 1.dp)
+                MenuItemsList(items = menuItems)
 
             }
 
@@ -166,102 +172,46 @@ fun Home(
 }
 
 
-@Composable
-fun LowerPanel() {
-    Column {
-        Text(
-            text = "ORDER FOR DELIVERY!",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier
-                .padding(8.dp),
-            color = Color.Black
-        )
-
-        MenuItemsList(items = listOf())
-    }
-}
 
 
 
-@Preview(showBackground = true)
-@Composable
-fun LowerPanelPreview(){
-    LowerPanel()
-}
+
+
 
 @Composable
-fun UpperPanel(
-
+fun CategoryButtons(
+    categories: List<String>,
+    selectedCategory: String,
+    onCategorySelected: (String) -> Unit
 ){
-    var searchPhrase by remember {
-        mutableStateOf("")
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF495E57))
-            .padding(start = 12.dp, end = 12.dp, top = 16.dp, bottom = 16.dp)
-    ) {
-        Text(
-            text = stringResource(id = R.string.title),
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFFF4CE14)
-        )
-        Text(
-            text = stringResource(id = R.string.location),
-            fontSize = 24.sp,
-            color = Color(0xFFEDEFEE)
-        )
-        Row(
+        LazyRow(
+            horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .padding(top = 18.dp, bottom = 48.dp)
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.description),
-                color = Color(0xFFEDEFEE),
-                fontSize = 18.sp,
-                modifier = Modifier
-                    .padding(bottom = 28.dp)
-                    .fillMaxWidth(0.6f)
-            )
-            Image(
-                painter = painterResource(id = R.drawable.upperpanelimage),
-                contentDescription = "Upper Panel Image",
-                modifier = Modifier.clip(RoundedCornerShape(20.dp))
+            items(
+                items= categories,
+                itemContent = { category ->
+                    val isSelected = category == selectedCategory
+                    Button( onClick = { onCategorySelected(category) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isSelected)
+                                Color(0xFF495E57) else Color(0xFFEDEFEE),
+                            contentColor = if (isSelected)
+                                Color(0xFFFFFFFF)else Color(0xFF495E57))
+                    ) {
+                        Text(text = category,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                        )
+                    }
+                }
             )
         }
-        OutlinedTextField(
-            value = searchPhrase,
-            onValueChange = {searchPhrase = it},
-            modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.colors(Color.LightGray),
-            leadingIcon = {
-                Icon(imageVector = Icons.Default.Search,
-                    contentDescription = null )
-            },
-            shape =RoundedCornerShape(16.dp),
-            placeholder = {
-                Text(
-                    text = "Enter search phrase")
-            }
 
-        )
-    }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun UpperPanelPreview(){
-    UpperPanel()
-}
-@Preview(showBackground = true)
-@Composable
-fun HomePreview() {
-    LittleLemonTheme {
-        Home(navController = NavHostController(context = LocalContext.current))
-    }
+
 }
 
 @OptIn(ExperimentalGlideComposeApi::class)
@@ -275,7 +225,11 @@ private fun MenuItemsList(items: List<MenuItemRoom>) {
         items(
             items = items,
             itemContent = { menuItem ->
-                Card {
+                Card (
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White,
+                    )
+                ){
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

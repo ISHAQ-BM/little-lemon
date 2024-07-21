@@ -5,6 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -60,25 +65,52 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             if (database.menuItemDao().isEmpty()) {
-                val menuItemsNetwork = fetchMenu()
-                saveMenuToDatabase(menuItemsNetwork)
+                val menuItems = fetchMenu()
+                saveMenuToDatabase(menuItems)
             }
         }
-
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                databaseMenuItems.value=database.menuItemDao().getAll().value
-            }
-        }
-
 
         setContent {
             LittleLemonTheme {
+                val databaseMenuItems = database
+                    .menuItemDao()
+                    .getAll()
+                    .observeAsState(emptyList())
+                    .value
 
-                Surface {
-                    val navController = rememberNavController()
-                    Navigation(navController = navController)
+                var searchPhrase by remember {
+                    mutableStateOf("")
                 }
+                var selectedCategory by remember {
+                    mutableStateOf("All")
+                }
+
+                val filterHelper = FilterHelper()
+
+                val categoryFilteredItems = filterHelper.filterMenu(
+                    type = when (selectedCategory) {
+                        "starters" -> FilterType.Starters
+                        "mains" -> FilterType.Mains
+                        "desserts" -> FilterType.Desserts
+                        "drinks" -> FilterType.Drinks
+                        else -> FilterType.All
+                    },
+                    menuList = databaseMenuItems
+                )
+                val filteredMenuItems = categoryFilteredItems.filter {
+                    it.title.contains(searchPhrase, ignoreCase = true)
+                }
+
+
+
+                    Navigation(menuItems = filteredMenuItems,
+                        onSearch = { searchPhrase = it },
+                        onCategorySelected = { category ->
+                            selectedCategory = if (selectedCategory == category) "All" else category
+                        },
+                        selectedCategory = selectedCategory,
+                        searchPhrase = searchPhrase,)
+
             }
         }
     }
